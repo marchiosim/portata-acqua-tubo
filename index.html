@@ -1,0 +1,615 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Portata Tubo — Formula di Manning</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg:       #0f1117;
+    --bg2:      #171b25;
+    --bg3:      #1e2330;
+    --border:   rgba(255,255,255,0.08);
+    --border2:  rgba(255,255,255,0.16);
+    --text:     #e8eaf0;
+    --muted:    #7a8099;
+    --accent:   #3b8bd4;
+    --accent2:  #5ba8f0;
+    --warn:     #e8913b;
+    --danger:   #e85050;
+    --green:    #4caf7d;
+    --mono:     'IBM Plex Mono', monospace;
+    --sans:     'IBM Plex Sans', sans-serif;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    font-size: 14px;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 48px 16px 80px;
+  }
+
+  /* Header */
+  header {
+    width: 100%;
+    max-width: 680px;
+    margin-bottom: 40px;
+    border-bottom: 1px solid var(--border2);
+    padding-bottom: 20px;
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 16px;
+  }
+  .header-left h1 {
+    font-family: var(--mono);
+    font-size: 22px;
+    font-weight: 600;
+    letter-spacing: -0.5px;
+    line-height: 1.2;
+    color: var(--text);
+  }
+  .header-left p {
+    font-size: 12px;
+    color: var(--muted);
+    font-family: var(--mono);
+    margin-top: 4px;
+    letter-spacing: 0.5px;
+  }
+  .badge {
+    font-family: var(--mono);
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    padding: 4px 10px;
+    border: 1px solid var(--border2);
+    border-radius: 3px;
+    color: var(--muted);
+    white-space: nowrap;
+  }
+
+  /* Main layout */
+  main { width: 100%; max-width: 680px; display: flex; flex-direction: column; gap: 20px; }
+
+  /* Panel */
+  .panel {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 24px;
+  }
+  .panel-title {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 20px;
+  }
+
+  /* Sliders */
+  .field { margin-bottom: 20px; }
+  .field:last-child { margin-bottom: 0; }
+  .field-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 10px;
+  }
+  .field-label {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--muted);
+    letter-spacing: 0.5px;
+  }
+  .field-value {
+    font-family: var(--mono);
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--accent2);
+  }
+
+  input[type=range] {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100%;
+    height: 2px;
+    background: var(--border2);
+    border-radius: 0;
+    outline: none;
+    cursor: pointer;
+  }
+  input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 14px;
+    height: 14px;
+    background: var(--accent2);
+    border-radius: 0;
+    cursor: pointer;
+    border: none;
+    box-shadow: 0 0 0 3px var(--bg2), 0 0 0 4px var(--accent);
+    transition: box-shadow 0.15s;
+  }
+  input[type=range]:focus::-webkit-slider-thumb {
+    box-shadow: 0 0 0 3px var(--bg2), 0 0 0 5px var(--accent2);
+  }
+  input[type=range]::-moz-range-thumb {
+    width: 14px; height: 14px;
+    background: var(--accent2);
+    border-radius: 0;
+    border: none;
+    cursor: pointer;
+  }
+
+  /* Select */
+  select {
+    width: 100%;
+    background: var(--bg3);
+    border: 1px solid var(--border2);
+    border-radius: 4px;
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 12px;
+    padding: 10px 12px;
+    cursor: pointer;
+    outline: none;
+    -webkit-appearance: none;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%237a8099'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+  }
+  select:focus { border-color: var(--accent); }
+
+  /* Results grid */
+  .results {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+  }
+  .result-card {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 16px;
+    position: relative;
+    overflow: hidden;
+    transition: border-color 0.3s;
+  }
+  .result-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: var(--accent);
+    transition: background 0.3s;
+  }
+  .result-card.warn::before { background: var(--warn); }
+  .result-card.danger::before { background: var(--danger); }
+  .result-label {
+    font-family: var(--mono);
+    font-size: 9px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 8px;
+    display: block;
+  }
+  .result-number {
+    font-family: var(--mono);
+    font-size: 28px;
+    font-weight: 600;
+    color: var(--text);
+    line-height: 1;
+    display: block;
+    transition: color 0.3s;
+  }
+  .result-card.warn .result-number { color: var(--warn); }
+  .result-card.danger .result-number { color: var(--danger); }
+  .result-unit {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--muted);
+    margin-top: 4px;
+    display: block;
+  }
+
+  /* Pipe section visual */
+  .pipe-wrap {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 8px 0 16px;
+  }
+  #pipe-canvas { display: block; }
+
+  /* Velocity bar */
+  .vel-bar-wrap {
+    margin-top: 16px;
+  }
+  .vel-bar-header {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 6px;
+  }
+  .vel-bar-header span {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--muted);
+    letter-spacing: 0.5px;
+  }
+  .vel-bar-track {
+    height: 6px;
+    background: var(--border);
+    border-radius: 0;
+    position: relative;
+    overflow: hidden;
+  }
+  .vel-bar-fill {
+    height: 100%;
+    width: 0%;
+    transition: width 0.4s ease, background 0.3s;
+    background: var(--accent);
+  }
+  .vel-zones {
+    display: flex;
+    margin-top: 4px;
+    font-family: var(--mono);
+    font-size: 9px;
+    color: var(--muted);
+  }
+  .vel-zones span { flex: 1; }
+  .vel-zones span:nth-child(2) { text-align: center; }
+  .vel-zones span:nth-child(3) { text-align: right; }
+
+  /* Alert */
+  .alert {
+    display: none;
+    font-family: var(--mono);
+    font-size: 11px;
+    padding: 10px 14px;
+    border-left: 3px solid var(--warn);
+    background: rgba(232,145,59,0.07);
+    color: var(--warn);
+    border-radius: 0 3px 3px 0;
+    margin-top: 14px;
+    line-height: 1.6;
+  }
+  .alert.show { display: block; }
+  .alert.danger-alert { border-color: var(--danger); background: rgba(232,80,80,0.07); color: var(--danger); }
+
+  /* Formula */
+  .formula-box {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 16px 20px;
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--muted);
+    line-height: 1.9;
+  }
+  .formula-box strong { color: var(--text); font-weight: 500; }
+  .formula-box .formula-eq {
+    font-size: 14px;
+    color: var(--accent2);
+    font-weight: 600;
+    margin: 4px 0 8px;
+    letter-spacing: 0.3px;
+  }
+  .vars { display: flex; flex-wrap: wrap; gap: 8px 24px; }
+  .vars span { font-size: 11px; }
+
+  /* Footer */
+  footer {
+    width: 100%;
+    max-width: 680px;
+    margin-top: 32px;
+    padding-top: 16px;
+    border-top: 1px solid var(--border);
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--muted);
+    letter-spacing: 0.5px;
+    display: flex;
+    justify-content: space-between;
+  }
+
+  @media (max-width: 500px) {
+    .results { grid-template-columns: 1fr 1fr; }
+    .results .result-card:last-child { grid-column: span 2; }
+    header { flex-direction: column; align-items: flex-start; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-left">
+    <h1>Portata Tubo Scarico</h1>
+    <p>Formula di Manning — sezione circolare piena</p>
+  </div>
+  <div class="badge">Idraulica</div>
+</header>
+
+<main>
+
+  <!-- Parametri -->
+  <div class="panel">
+    <div class="panel-title">Parametri</div>
+
+    <div class="field">
+      <div class="field-header">
+        <span class="field-label">Diametro interno</span>
+        <span class="field-value" id="lbl-diam">310 mm</span>
+      </div>
+      <input type="range" id="sl-diam" min="50" max="800" step="10" value="310">
+    </div>
+
+    <div class="field">
+      <div class="field-header">
+        <span class="field-label">Pendenza</span>
+        <span class="field-value" id="lbl-slope">10.0 %</span>
+      </div>
+      <input type="range" id="sl-slope" min="0.1" max="25" step="0.1" value="10">
+    </div>
+
+    <div class="field">
+      <div class="field-header">
+        <span class="field-label">Coefficiente di scabrezza n</span>
+        <span class="field-value" id="lbl-n">0.013</span>
+      </div>
+      <select id="sel-mat">
+        <option value="0.010">PVC / HDPE liscio — n = 0.010</option>
+        <option value="0.011">Grès ceramico — n = 0.011</option>
+        <option value="0.013">Calcestruzzo — n = 0.013</option>
+        <option value="0.015">Muratura / mattoni — n = 0.015</option>
+        <option value="0.017">Pietra irregolare — n = 0.017</option>
+        <option value="0.019" selected>Plastica corrugata (SN4/SN8) — n = 0.019</option>
+        <option value="0.020">Terreno naturale — n = 0.020</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- Risultati -->
+  <div class="panel">
+    <div class="panel-title">Risultati — piena sezione</div>
+    <div class="results">
+      <div class="result-card" id="card-q">
+        <span class="result-label">Portata Q</span>
+        <span class="result-number" id="val-q">—</span>
+        <span class="result-unit">litri / secondo</span>
+      </div>
+      <div class="result-card" id="card-qh">
+        <span class="result-label">Portata Q</span>
+        <span class="result-number" id="val-qh">—</span>
+        <span class="result-unit">m³ / ora</span>
+      </div>
+      <div class="result-card" id="card-v">
+        <span class="result-label">Velocità media V</span>
+        <span class="result-number" id="val-v">—</span>
+        <span class="result-unit">m / s</span>
+      </div>
+    </div>
+
+    <div class="vel-bar-wrap">
+      <div class="vel-bar-header">
+        <span>Velocità: <span id="vel-status">—</span></span>
+        <span id="vel-val-label">0.00 m/s</span>
+      </div>
+      <div class="vel-bar-track">
+        <div class="vel-bar-fill" id="vel-bar"></div>
+      </div>
+      <div class="vel-zones">
+        <span>lenta &lt;0.6</span>
+        <span>✓ ottimale 0.6–4</span>
+        <span>&gt;4 erosiva</span>
+      </div>
+    </div>
+
+    <div class="alert" id="alert-box"></div>
+  </div>
+
+  <!-- Sezione tubo -->
+  <div class="panel">
+    <div class="panel-title">Sezione trasversale</div>
+    <div class="pipe-wrap">
+      <canvas id="pipe-canvas" width="320" height="200"></canvas>
+    </div>
+  </div>
+
+  <!-- Formula -->
+  <div class="formula-box">
+    <div class="formula-eq">Q = (1/n) · A · R<sup>2/3</sup> · S<sup>1/2</sup></div>
+    <div class="vars">
+      <span><strong>Q</strong> portata [m³/s]</span>
+      <span><strong>n</strong> coeff. Manning</span>
+      <span><strong>A</strong> area sezione [m²]</span>
+      <span><strong>R</strong> raggio idraulico = D/4 [m]</span>
+      <span><strong>S</strong> pendenza [m/m]</span>
+    </div>
+  </div>
+
+</main>
+
+<footer>
+  <span>Manning (1891) — moto uniforme</span>
+  <span>Valida per sezione circolare a piena sezione</span>
+</footer>
+
+<script>
+const slDiam  = document.getElementById('sl-diam');
+const slSlope = document.getElementById('sl-slope');
+const selMat  = document.getElementById('sel-mat');
+const lblDiam  = document.getElementById('lbl-diam');
+const lblSlope = document.getElementById('lbl-slope');
+const lblN     = document.getElementById('lbl-n');
+const valQ   = document.getElementById('val-q');
+const valQh  = document.getElementById('val-qh');
+const valV   = document.getElementById('val-v');
+const cardV  = document.getElementById('card-v');
+const velBar = document.getElementById('vel-bar');
+const velStatus    = document.getElementById('vel-status');
+const velValLabel  = document.getElementById('vel-val-label');
+const alertBox = document.getElementById('alert-box');
+const canvas   = document.getElementById('pipe-canvas');
+const ctx      = canvas.getContext('2d');
+
+const MAX_VEL = 8; // per la barra
+
+function getColors() {
+  return {
+    bg:      getComputedStyle(document.documentElement).getPropertyValue('--bg3').trim()     || '#1e2330',
+    accent:  getComputedStyle(document.documentElement).getPropertyValue('--accent').trim()  || '#3b8bd4',
+    accent2: getComputedStyle(document.documentElement).getPropertyValue('--accent2').trim() || '#5ba8f0',
+    muted:   getComputedStyle(document.documentElement).getPropertyValue('--muted').trim()   || '#7a8099',
+    text:    getComputedStyle(document.documentElement).getPropertyValue('--text').trim()    || '#e8eaf0',
+    warn:    getComputedStyle(document.documentElement).getPropertyValue('--warn').trim()    || '#e8913b',
+    danger:  getComputedStyle(document.documentElement).getPropertyValue('--danger').trim()  || '#e85050',
+    green:   getComputedStyle(document.documentElement).getPropertyValue('--green').trim()   || '#4caf7d',
+  };
+}
+
+function drawPipe(D_mm, vel) {
+  const W = canvas.width, H = canvas.height;
+  ctx.clearRect(0, 0, W, H);
+  const c = getColors();
+
+  const maxR = Math.min(W, H) / 2 - 24;
+  const r = Math.min(maxR, maxR);
+  const cx = W / 2, cy = H / 2;
+  const scale = Math.min(1, (D_mm / 400));
+  const drawR = 30 + scale * (r - 30);
+
+  // Outer ring
+  ctx.beginPath();
+  ctx.arc(cx, cy, drawR + 8, 0, Math.PI * 2);
+  ctx.fillStyle = '#2a2e3a';
+  ctx.fill();
+
+  // Wall ring
+  ctx.beginPath();
+  ctx.arc(cx, cy, drawR + 8, 0, Math.PI * 2);
+  ctx.strokeStyle = 'rgba(255,255,255,0.12)';
+  ctx.lineWidth = 1;
+  ctx.stroke();
+
+  // Water fill
+  const velColor = vel < 0.6 ? c.warn : vel > 4 ? c.danger : c.accent;
+  const grad = ctx.createRadialGradient(cx - drawR*0.2, cy - drawR*0.2, drawR*0.1, cx, cy, drawR);
+  grad.addColorStop(0, velColor + 'cc');
+  grad.addColorStop(1, velColor + '44');
+  ctx.beginPath();
+  ctx.arc(cx, cy, drawR, 0, Math.PI * 2);
+  ctx.fillStyle = grad;
+  ctx.fill();
+
+  // Pipe border
+  ctx.beginPath();
+  ctx.arc(cx, cy, drawR, 0, Math.PI * 2);
+  ctx.strokeStyle = velColor;
+  ctx.lineWidth = 1.5;
+  ctx.stroke();
+
+  // Center cross
+  ctx.strokeStyle = 'rgba(255,255,255,0.08)';
+  ctx.lineWidth = 0.5;
+  ctx.setLineDash([3, 4]);
+  ctx.beginPath(); ctx.moveTo(cx - drawR, cy); ctx.lineTo(cx + drawR, cy); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(cx, cy - drawR); ctx.lineTo(cx, cy + drawR); ctx.stroke();
+  ctx.setLineDash([]);
+
+  // Diameter label inside
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.font = '500 13px "IBM Plex Mono", monospace';
+  ctx.fillStyle = 'rgba(255,255,255,0.85)';
+  ctx.fillText('⌀ ' + D_mm + ' mm', cx, cy);
+
+  // Dimension line below circle
+  const ly = cy + drawR + 18;
+  ctx.strokeStyle = 'rgba(255,255,255,0.2)';
+  ctx.lineWidth = 0.8;
+  ctx.beginPath();
+  ctx.moveTo(cx - drawR, ly - 4); ctx.lineTo(cx - drawR, ly + 4); ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(cx + drawR, ly - 4); ctx.lineTo(cx + drawR, ly + 4); ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(cx - drawR, ly); ctx.lineTo(cx + drawR, ly); ctx.stroke();
+
+  ctx.font = '400 10px "IBM Plex Mono", monospace';
+  ctx.fillStyle = c.muted;
+  ctx.fillText(D_mm + ' mm', cx, ly + 12);
+}
+
+function calc() {
+  const D_mm = parseInt(slDiam.value);
+  const S_pct = parseFloat(slSlope.value);
+  const n = parseFloat(selMat.value);
+
+  lblDiam.textContent  = D_mm + ' mm';
+  lblSlope.textContent = S_pct.toFixed(1) + ' %';
+  lblN.textContent     = n.toFixed(3);
+
+  const D = D_mm / 1000;
+  const S = S_pct / 100;
+  const A = Math.PI * (D/2) * (D/2);
+  const R = D / 4;
+  const Q = (1/n) * A * Math.pow(R, 2/3) * Math.pow(S, 0.5);
+  const V = Q / A;
+
+  valQ.textContent  = Math.round(Q * 1000).toLocaleString('it-IT');
+  valQh.textContent = Math.round(Q * 3600).toLocaleString('it-IT');
+  valV.textContent  = V.toFixed(2);
+
+  // Velocity bar
+  const pct = Math.min(100, (V / MAX_VEL) * 100);
+  velBar.style.width = pct + '%';
+  velValLabel.textContent = V.toFixed(2) + ' m/s';
+
+  // Status
+  if (V < 0.6) {
+    velBar.style.background = '#e8913b';
+    velStatus.textContent = 'LENTA — rischio depositi';
+    velStatus.style.color = '#e8913b';
+    cardV.className = 'result-card warn';
+    alertBox.className = 'alert show';
+    alertBox.textContent = '⚠  Velocità ' + V.toFixed(2) + ' m/s < 0.6 m/s: sotto il minimo auto-pulente. Rischio sedimentazione e ostruzioni nel tubo.';
+    alertBox.classList.remove('danger-alert');
+  } else if (V > 4) {
+    velBar.style.background = '#e85050';
+    velStatus.textContent = 'ALTA — rischio erosione';
+    velStatus.style.color = '#e85050';
+    cardV.className = 'result-card danger';
+    alertBox.className = 'alert show danger-alert';
+    alertBox.textContent = '⚠  Velocità ' + V.toFixed(1) + ' m/s > 4 m/s: supera i limiti consigliati per ' + selMat.options[selMat.selectedIndex].text.split(' —')[0] + '. Rischio erosione interna del tubo.';
+  } else {
+    velBar.style.background = '#4caf7d';
+    velStatus.textContent = 'OTTIMALE';
+    velStatus.style.color = '#4caf7d';
+    cardV.className = 'result-card';
+    alertBox.className = 'alert';
+  }
+
+  drawPipe(D_mm, V);
+}
+
+slDiam.addEventListener('input', calc);
+slSlope.addEventListener('input', calc);
+selMat.addEventListener('change', calc);
+
+calc();
+</script>
+</body>
+</html>
