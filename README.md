@@ -4,7 +4,8 @@ Calcolatore idraulico per tubi a sezione circolare piena. Pagina HTML singola, z
 
 ## Utilizzo
 
-Apri `index.html` nel browser. Nessun server necessario.
+Apri `index.html` nel browser. Nessun server necessario.  
+O usa il link qui: https://marchiosim.github.io/portata-acqua-tubo/
 
 ## Parametri
 
